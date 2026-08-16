@@ -1,0 +1,14 @@
+{
+    "generations": [
+        {
+            "id": "00",
+            "name": "TEST",
+            "range": "2025 / 2029"
+        },
+        {
+            "id": "09",
+            "name": "ANGKATAN 09",
+            "range": "2026 / 2030"
+        }
+    ]
+}
