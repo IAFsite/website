@@ -3,7 +3,10 @@
 ========================= */
 
 const params =
-    new URLSearchParams(window.location.search);
+    new URLSearchParams(
+        window.location.search
+    );
+
 
 const generationId =
     params.get("id");
@@ -16,10 +19,15 @@ const generationId =
 async function loadStudents() {
 
     const studentList =
-        document.getElementById("student-list");
+        document.getElementById(
+            "student-list"
+        );
+
 
     const generationName =
-        document.getElementById("generation-name");
+        document.getElementById(
+            "generation-name"
+        );
 
 
     if (!generationId) {
@@ -36,39 +44,44 @@ async function loadStudents() {
     try {
 
         /* =========================
-           LOAD GENERATION DATABASE
+           LOAD DATABASE
         ========================= */
 
-        const response =
-            await fetch(
-                `https://raw.githubusercontent.com/IAFsite/dbea/main/nexsac/data/${encodeURIComponent(generationId)}.json`
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Data angkatan ${generationId} gagal dimuat (HTTP ${response.status})`
-            );
-
-        }
-
-
         const data =
-            await response.json();
+            await fetchGeneration(
+                generationId
+            );
 
 
         /* =========================
-           GENERATION
+        GENERATION
         ========================= */
 
-        if (generationName) {
+const generation =
+    data.generation || {};
 
-            generationName.textContent =
-                data.generation?.name ||
-                `MURID ANGKATAN ${generationId}`;
 
-        }
+const displayGeneration =
+    generation.name ||
+    `ANGKATAN ${generationId}`;
+
+
+if (generationName) {
+
+    generationName.textContent =
+        `MURID ${displayGeneration
+            .replace(/^ANGKATAN\s+/i, "ANGKATAN ")
+        }`;
+
+}
+
+
+/* =========================
+   DOCUMENT TITLE
+========================= */
+
+document.title =
+    `Murid ${displayGeneration} | SMA Sekolah Alam Cikeas`;
 
 
         /* =========================
@@ -81,8 +94,16 @@ async function loadStudents() {
                 : [];
 
 
+        if (!studentList)
+            return;
+
+
         studentList.innerHTML = "";
 
+
+        /* =========================
+           NO STUDENTS
+        ========================= */
 
         if (students.length === 0) {
 
@@ -95,7 +116,8 @@ async function loadStudents() {
                     </h2>
 
                     <p>
-                        Data murid untuk angkatan ini belum tersedia.
+                        Data murid untuk angkatan ini
+                        belum tersedia.
                     </p>
 
                 </div>
@@ -114,38 +136,36 @@ async function loadStudents() {
         students.forEach(
             (student, index) => {
 
+/* =========================
+   DEFAULT PROFILE
+========================= */
 
-                /*
-                 * Default profile:
-                 *
-                 * 1  → 1.png
-                 * 2  → 2.png
-                 * ...
-                 * 12 → 12.png
-                 * 13 → 1.png
-                 */
-
-                const defaultProfile =
-                    (index % 12) + 1;
+const defaultProfile =
+    (index % 12) + 1;
 
 
-                /* =========================
-                   PROFILE PHOTO
-                ========================= */
+/* =========================
+   PROFILE PHOTO
+========================= */
 
-                const photo =
-                    student.photo !== null &&
-                    student.photo !== ""
-                        ? student.photo
-                        : `asset/default-profile/${defaultProfile}.png`;
+const profilePhoto =
+    getProfilePhotoURL(
+        generationId,
+        student.photo
+    );
 
 
+const photo =
+    profilePhoto ||
+    `asset/default-profile/${defaultProfile}.png`;
                 /* =========================
                    CARD
                 ========================= */
 
                 const card =
-                    document.createElement("a");
+                    document.createElement(
+                        "a"
+                    );
 
 
                 card.className =
@@ -153,7 +173,11 @@ async function loadStudents() {
 
 
                 card.href =
-                    `profile.html?id=${encodeURIComponent(student.id)}&generation=${encodeURIComponent(generationId)}`;
+                    `profile.html?id=${encodeURIComponent(
+                        student.id
+                    )}&generation=${encodeURIComponent(
+                        generationId
+                    )}`;
 
 
                 card.innerHTML = `
@@ -161,7 +185,10 @@ async function loadStudents() {
                     <img
                         src="${escapeHTML(photo)}"
                         class="student-photo"
-                        alt="Foto ${escapeHTML(student.name)}"
+                        alt="Foto ${escapeHTML(
+                            student.name ||
+                            "murid"
+                        )}"
                         loading="lazy"
                     >
 
@@ -169,14 +196,22 @@ async function loadStudents() {
                     <div class="student-info">
 
                         <h2 class="student-name">
-                            ${escapeHTML(student.name)}
+
+                            ${escapeHTML(
+                                student.name ||
+                                "Nama tidak tersedia"
+                            )}
+
                         </h2>
 
 
                         <div class="student-id">
 
                             NEXUS SAC |
-                            ${escapeHTML(student.id)}
+                            ${escapeHTML(
+                                student.id ||
+                                "-"
+                            )}
 
                         </div>
 
@@ -185,7 +220,9 @@ async function loadStudents() {
                 `;
 
 
-                studentList.appendChild(card);
+                studentList.appendChild(
+                    card
+                );
 
             }
         );
@@ -201,7 +238,9 @@ async function loadStudents() {
         );
 
 
-        showError(error.message);
+        showError(
+            error.message
+        );
 
     }
 
@@ -212,10 +251,14 @@ async function loadStudents() {
    ERROR
 ========================= */
 
-function showError(message) {
+function showError(
+    message
+) {
 
     const studentList =
-        document.getElementById("student-list");
+        document.getElementById(
+            "student-list"
+        );
 
 
     if (!studentList)
@@ -245,19 +288,36 @@ function showError(message) {
    HTML ESCAPE
 ========================= */
 
-function escapeHTML(text) {
+function escapeHTML(
+    text
+) {
 
     return String(text)
 
-        .replaceAll("&", "&amp;")
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
 
-        .replaceAll("<", "&lt;")
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
 
-        .replaceAll(">", "&gt;")
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
 
-        .replaceAll('"', "&quot;")
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
 
-        .replaceAll("'", "&#039;");
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 

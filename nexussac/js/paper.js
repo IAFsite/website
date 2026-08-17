@@ -1,5 +1,12 @@
+/* =========================
+   GET PARAMETERS
+========================= */
+
 const params =
-    new URLSearchParams(window.location.search);
+    new URLSearchParams(
+        window.location.search
+    );
+
 
 const paperId =
     params.get("id") || "";
@@ -10,19 +17,29 @@ const paperId =
 ========================= */
 
 /*
- * Nomor angkatan disimpan oleh
- * penelitian.js sebelum membuka paper.
+ * Prioritas:
+ *
+ * 1. generation dari URL
+ * 2. generation dari sessionStorage
  */
 
 const generationId =
-    sessionStorage.getItem("paperGeneration") || "";
+    params.get("generation") ||
+    sessionStorage.getItem(
+        "paperGeneration"
+    ) ||
+    "";
 
 
 /* =========================
-   LOAD DATABASE
+   LOAD PAPER
 ========================= */
 
 async function loadPaper() {
+
+    /* =========================
+       CHECK PAPER ID
+    ========================= */
 
     if (!paperId) {
 
@@ -34,6 +51,10 @@ async function loadPaper() {
 
     }
 
+
+    /* =========================
+       CHECK GENERATION
+    ========================= */
 
     if (!generationId) {
 
@@ -49,78 +70,14 @@ async function loadPaper() {
     try {
 
         /* =========================
-           LOAD GENERATION DATABASE
+           FETCH PAPER
         ========================= */
 
-        const response =
-            await fetch(
-                `https://raw.githubusercontent.com/IAFsite/dbea/main/nexsac/data/${encodeURIComponent(generationId)}.json`
+        const result =
+            await fetchPaper(
+                generationId,
+                paperId
             );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Data angkatan ${generationId} gagal dimuat (HTTP ${response.status}).`
-            );
-
-        }
-
-
-        const database =
-            await response.json();
-
-
-        /* =========================
-           FIND RESEARCH
-        ========================= */
-
-        let paper = null;
-        let student = null;
-
-
-        for (
-            const currentStudent
-            of database.students || []
-        ) {
-
-            const researchList =
-                currentStudent.research || [];
-
-
-            const found =
-                researchList.find(
-                    research =>
-                        String(research.id) ===
-                        String(paperId)
-                );
-
-
-            if (found) {
-
-                paper = found;
-
-                student =
-                    currentStudent;
-
-                break;
-
-            }
-
-        }
-
-
-        /* =========================
-           NOT FOUND
-        ========================= */
-
-        if (!paper) {
-
-            throw new Error(
-                `Penelitian dengan kode "${paperId}" tidak ditemukan pada angkatan ${generationId}.`
-            );
-
-        }
 
 
         /* =========================
@@ -129,9 +86,9 @@ async function loadPaper() {
 
         renderPaper(
             paperId,
-            paper,
-            student,
-            database.generation
+            result.paper,
+            result.student,
+            result.generation
         );
 
     }
@@ -156,7 +113,7 @@ async function loadPaper() {
 
 
 /* =========================
-   RENDER
+   RENDER PAPER
 ========================= */
 
 function renderPaper(
@@ -166,31 +123,41 @@ function renderPaper(
     generation
 ) {
 
-/* =========================
-   HEADER TITLE
-========================= */
+    /* =========================
+       HEADER
+    ========================= */
 
-const pageTitle =
-    document.getElementById("page-title");
+    const pageTitle =
+        document.getElementById(
+            "page-title"
+        );
 
-const typeNames = {
 
-    a: "3S3C",
+    const typeNames = {
 
-    b: "Laporan"
+        a: "3S3C",
 
-};
+        b: "Laporan"
 
-if (pageTitle) {
+    };
 
-    const typeName =
-        typeNames[paper.type] ||
-        "Penelitian";
 
-    pageTitle.textContent =
-        `${typeName} — ANGKATAN ${generationId}`;
+    if (pageTitle) {
 
-}
+        const typeName =
+            typeNames[paper.type] ||
+            "Penelitian";
+
+
+        const generationName =
+            generation?.name ||
+            `ANGKATAN ${generationId}`;
+
+
+        pageTitle.textContent =
+            `${typeName} — ${generationName}`;
+
+    }
 
 
     /* =========================
@@ -206,13 +173,16 @@ if (pageTitle) {
     ========================= */
 
     const title =
-        document.getElementById("title");
+        document.getElementById(
+            "title"
+        );
 
 
     if (title) {
 
         title.textContent =
-            paper.title || "Tanpa Judul";
+            paper.title ||
+            "Tanpa Judul";
 
     }
 
@@ -222,7 +192,9 @@ if (pageTitle) {
     ========================= */
 
     const paperIdElement =
-        document.getElementById("paper-id");
+        document.getElementById(
+            "paper-id"
+        );
 
 
     if (paperIdElement) {
@@ -238,13 +210,16 @@ if (pageTitle) {
     ========================= */
 
     const author =
-        document.getElementById("author");
+        document.getElementById(
+            "author"
+        );
 
 
     if (author) {
 
         author.textContent =
-            student?.name || "-";
+            student?.name ||
+            "-";
 
     }
 
@@ -254,13 +229,16 @@ if (pageTitle) {
     ========================= */
 
     const mentor =
-        document.getElementById("mentor");
+        document.getElementById(
+            "mentor"
+        );
 
 
     if (mentor) {
 
         mentor.textContent =
-            paper.mentor || "-";
+            paper.mentor ||
+            "-";
 
     }
 
@@ -270,13 +248,16 @@ if (pageTitle) {
     ========================= */
 
     const year =
-        document.getElementById("year");
+        document.getElementById(
+            "year"
+        );
 
 
     if (year) {
 
         year.textContent =
-            paper.year || "-";
+            paper.year ||
+            "-";
 
     }
 
@@ -286,7 +267,9 @@ if (pageTitle) {
     ========================= */
 
     const contentElement =
-        document.getElementById("content");
+        document.getElementById(
+            "content"
+        );
 
 
     if (!contentElement) {
@@ -311,12 +294,14 @@ if (pageTitle) {
 
 
 /* =========================
-   ASSET
+   FILE ASSET
 ========================= */
 
 function asset(path) {
 
-    return String(path || "").trim();
+    return String(
+        path || ""
+    ).trim();
 
 }
 
@@ -329,15 +314,30 @@ function escapeHTML(text) {
 
     return String(text)
 
-        .replace(/&/g, "&amp;")
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
 
-        .replace(/</g, "&lt;")
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
 
-        .replace(/>/g, "&gt;")
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
 
-        .replace(/"/g, "&quot;")
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
 
-        .replace(/'/g, "&#039;");
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 
@@ -352,7 +352,9 @@ function parseInline(text) {
         escapeHTML(text);
 
 
-    /* LINK */
+    /* =========================
+       LINK
+    ========================= */
 
     text =
         text.replace(
@@ -361,7 +363,9 @@ function parseInline(text) {
         );
 
 
-    /* CODE */
+    /* =========================
+       CODE
+    ========================= */
 
     text =
         text.replace(
@@ -370,7 +374,9 @@ function parseInline(text) {
         );
 
 
-    /* BOLD */
+    /* =========================
+       BOLD
+    ========================= */
 
     text =
         text.replace(
@@ -379,7 +385,9 @@ function parseInline(text) {
         );
 
 
-    /* UNDERLINE */
+    /* =========================
+       UNDERLINE
+    ========================= */
 
     text =
         text.replace(
@@ -388,16 +396,20 @@ function parseInline(text) {
         );
 
 
-    /* ITALIC */
+    /* =========================
+       ITALIC
+    ========================= */
 
     text =
         text.replace(
-            /(?<!\*)\*([^*]+)\*(?!\*)/g,
+            /(?<!\*)\*([^\*]+)\*(?!\*)/g,
             "<em>$1</em>"
         );
 
 
-    /* DELETE */
+    /* =========================
+       DELETE
+    ========================= */
 
     text =
         text.replace(
@@ -415,10 +427,14 @@ function parseInline(text) {
    MARKDOWN
 ========================= */
 
-function parseMarkdown(text = "") {
+function parseMarkdown(
+    text = ""
+) {
 
     const lines =
-        text.split(/\r?\n/);
+        text.split(
+            /\r?\n/
+        );
 
 
     let html = "";
@@ -459,7 +475,9 @@ function parseMarkdown(text = "") {
             rawLine.trim();
 
 
-        /* EMPTY */
+        /* =========================
+           EMPTY
+        ========================= */
 
         if (!line) {
 
@@ -470,7 +488,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* H1 */
+        /* =========================
+           H1
+        ========================= */
 
         if (
             line.startsWith("#h1")
@@ -481,7 +501,10 @@ function parseMarkdown(text = "") {
 
             const value =
                 line
-                    .replace("#h1", "")
+                    .replace(
+                        "#h1",
+                        ""
+                    )
                     .trim();
 
 
@@ -497,7 +520,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* H2 */
+        /* =========================
+           H2
+        ========================= */
 
         if (
             line.startsWith("## ")
@@ -508,7 +533,10 @@ function parseMarkdown(text = "") {
 
             const value =
                 line
-                    .replace(/^##\s*/, "")
+                    .replace(
+                        /^##\s*/,
+                        ""
+                    )
                     .trim();
 
 
@@ -524,7 +552,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* H3 */
+        /* =========================
+           H3
+        ========================= */
 
         if (
             line.startsWith("### ")
@@ -535,7 +565,10 @@ function parseMarkdown(text = "") {
 
             const value =
                 line
-                    .replace(/^###\s*/, "")
+                    .replace(
+                        /^###\s*/,
+                        ""
+                    )
                     .trim();
 
 
@@ -551,7 +584,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* SEPARATOR */
+        /* =========================
+           SEPARATOR
+        ========================= */
 
         if (
             line === "___"
@@ -566,7 +601,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* IMAGE */
+        /* =========================
+           IMAGE
+        ========================= */
 
         if (
             line.startsWith("#img")
@@ -577,17 +614,27 @@ function parseMarkdown(text = "") {
 
             const src =
                 line
-                    .replace("#img", "")
+                    .replace(
+                        "#img",
+                        ""
+                    )
                     .trim();
 
 
-            if (src) {
+            const mediaURL =
+                getMediaURL(
+                    generationId,
+                    src
+                );
+
+
+            if (mediaURL) {
 
                 html += `
                     <figure class="paper-image">
 
                         <img
-                            src="${escapeHTML(src)}"
+                            src="${escapeHTML(mediaURL)}"
                             loading="lazy"
                             alt="Dokumentasi penelitian">
 
@@ -602,7 +649,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* VIDEO */
+        /* =========================
+           VIDEO
+        ========================= */
 
         if (
             line.startsWith("#vid")
@@ -613,11 +662,21 @@ function parseMarkdown(text = "") {
 
             const src =
                 line
-                    .replace("#vid", "")
+                    .replace(
+                        "#vid",
+                        ""
+                    )
                     .trim();
 
 
-            if (src) {
+            const mediaURL =
+                getMediaURL(
+                    generationId,
+                    src
+                );
+
+
+            if (mediaURL) {
 
                 html += `
                     <div class="paper-video">
@@ -625,7 +684,7 @@ function parseMarkdown(text = "") {
                         <video
                             controls
                             preload="metadata"
-                            src="${escapeHTML(src)}">
+                            src="${escapeHTML(mediaURL)}">
                         </video>
 
                     </div>
@@ -639,7 +698,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* FILE */
+        /* =========================
+           FILE
+        ========================= */
 
         if (
             line.startsWith("#file")
@@ -650,7 +711,10 @@ function parseMarkdown(text = "") {
 
             const src =
                 line
-                    .replace("#file", "")
+                    .replace(
+                        "#file",
+                        ""
+                    )
                     .trim();
 
 
@@ -665,7 +729,9 @@ function parseMarkdown(text = "") {
                 html += `
                     <a
                         class="edu-file"
-                        href="${escapeHTML(asset(src))}"
+                        href="${escapeHTML(
+                            asset(src)
+                        )}"
                         target="_blank"
                         rel="noopener">
 
@@ -682,7 +748,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* BULLET */
+        /* =========================
+           BULLET
+        ========================= */
 
         if (
             line.startsWith("- ")
@@ -718,7 +786,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* NUMBER LIST */
+        /* =========================
+           NUMBER LIST
+        ========================= */
 
         if (
             /^\d+\.\s/.test(line)
@@ -757,7 +827,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* BLOCKQUOTE */
+        /* =========================
+           BLOCKQUOTE
+        ========================= */
 
         if (
             line.startsWith(">")
@@ -782,7 +854,9 @@ function parseMarkdown(text = "") {
         }
 
 
-        /* NORMAL TEXT */
+        /* =========================
+           NORMAL TEXT
+        ========================= */
 
         closeList();
 
@@ -811,11 +885,15 @@ function parseMarkdown(text = "") {
 function showError(message) {
 
     const title =
-        document.getElementById("title");
+        document.getElementById(
+            "title"
+        );
 
 
     const content =
-        document.getElementById("content");
+        document.getElementById(
+            "content"
+        );
 
 
     if (title) {

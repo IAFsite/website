@@ -1,5 +1,12 @@
+/* =========================
+   GET GENERATION ID
+========================= */
+
 const params =
-    new URLSearchParams(window.location.search);
+    new URLSearchParams(
+        window.location.search
+    );
+
 
 const generationId =
     params.get("id") || "";
@@ -12,11 +19,11 @@ const generationId =
 const researchTypes = {
 
     a: {
-        name: "3S3C",
+        name: "3S3C"
     },
 
     b: {
-        name: "Laporan",
+        name: "Laporan"
     }
 
 };
@@ -29,20 +36,28 @@ const researchTypes = {
 async function loadGeneration() {
 
     const generationName =
-        document.getElementById("generation-name");
+        document.getElementById(
+            "generation-name"
+        );
+
 
     const studentCard =
-        document.getElementById("student-card");
+        document.getElementById(
+            "student-card"
+        );
+
 
     const studentGenerationName =
         document.getElementById(
             "student-generation-name"
         );
 
+
     const studentGenerationCount =
         document.getElementById(
             "student-generation-count"
         );
+
 
     const researchTypesContainer =
         document.getElementById(
@@ -69,26 +84,13 @@ async function loadGeneration() {
     try {
 
         /* =========================
-           LOAD JSON
+           LOAD DATABASE
         ========================= */
 
-        const response =
-            await fetch(
-                `https://raw.githubusercontent.com/IAFsite/dbea/main/nexsac/data/${encodeURIComponent(generationId)}.json`
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Data angkatan tidak dapat dimuat (HTTP ${response.status}).`
-            );
-
-        }
-
-
         const data =
-            await response.json();
+            await fetchGenerationData(
+                generationId
+            );
 
 
         /* =========================
@@ -100,7 +102,9 @@ async function loadGeneration() {
 
 
         const students =
-            Array.isArray(data.students)
+            Array.isArray(
+                data.students
+            )
                 ? data.students
                 : [];
 
@@ -114,27 +118,49 @@ async function loadGeneration() {
            HEADER
         ========================= */
 
-        generationName.textContent =
-            displayGeneration;
+        if (generationName) {
+
+            generationName.textContent =
+                displayGeneration;
+
+        }
 
 
         /* =========================
            STUDENT CARD
         ========================= */
 
-        studentGenerationName.textContent =
-            `Murid ${displayGeneration
-                .toLowerCase()
-                .replace(/^angkatan\s+/i, "Angkatan ")
-            }`;
+        if (studentGenerationName) {
+
+            studentGenerationName.textContent =
+                `Murid ${
+                    displayGeneration
+                        .toLowerCase()
+                        .replace(
+                            /^angkatan\s+/i,
+                            "Angkatan "
+                        )
+                }`;
+
+        }
 
 
-        studentGenerationCount.textContent =
-            `${students.length} murid`;
+        if (studentGenerationCount) {
+
+            studentGenerationCount.textContent =
+                `${students.length} murid`;
+
+        }
 
 
-        studentCard.href =
-            `muridangkatan.html?id=${encodeURIComponent(generationId)}`;
+        if (studentCard) {
+
+            studentCard.href =
+                `muridangkatan.html?id=${encodeURIComponent(
+                    generationId
+                )}`;
+
+        }
 
 
         /* =========================
@@ -145,7 +171,10 @@ async function loadGeneration() {
             new Map();
 
 
-        for (const student of students) {
+        for (
+            const student
+            of students
+        ) {
 
             for (
                 const research
@@ -162,7 +191,9 @@ async function loadGeneration() {
                 ) {
 
                     if (
-                        !availableTypes.has(type)
+                        !availableTypes.has(
+                            type
+                        )
                     ) {
 
                         availableTypes.set(
@@ -175,7 +206,9 @@ async function loadGeneration() {
 
                     availableTypes.set(
                         type,
-                        availableTypes.get(type) + 1
+                        availableTypes.get(
+                            type
+                        ) + 1
                     );
 
                 }
@@ -189,7 +222,12 @@ async function loadGeneration() {
            CLEAR
         ========================= */
 
-        researchTypesContainer.innerHTML = "";
+        if (!researchTypesContainer)
+            return;
+
+
+        researchTypesContainer.innerHTML =
+            "";
 
 
         /* =========================
@@ -224,7 +262,9 @@ async function loadGeneration() {
 
 
             const card =
-                document.createElement("a");
+                document.createElement(
+                    "a"
+                );
 
 
             card.className =
@@ -234,13 +274,17 @@ async function loadGeneration() {
             /*
              * Flow:
              *
-             * angkatan.html?id=09
+             * generation.html?id=09
              * ↓
              * penelitian.html?id=09&type=a
              */
 
             card.href =
-                `penelitian.html?id=${encodeURIComponent(generationId)}&type=${encodeURIComponent(type)}`;
+                `penelitian.html?id=${encodeURIComponent(
+                    generationId
+                )}&type=${encodeURIComponent(
+                    type
+                )}`;
 
 
             card.innerHTML = `
@@ -248,11 +292,18 @@ async function loadGeneration() {
                 <div class="research-type-content">
 
                     <h2>
-                        ${escapeHTML(info.name)}
+
+                        ${escapeHTML(
+                            info.name
+                        )}
+
                     </h2>
 
+
                     <span class="research-count">
+
                         ${count} File
+
                     </span>
 
                 </div>
@@ -309,7 +360,11 @@ function showError(
             </h2>
 
             <p>
-                ${escapeHTML(message)}
+
+                ${escapeHTML(
+                    message
+                )}
+
             </p>
 
         </div>
@@ -320,18 +375,39 @@ function showError(
 
 
 /* =========================
-   ESCAPE HTML
+   HTML ESCAPE
 ========================= */
 
-function escapeHTML(text) {
+function escapeHTML(
+    text
+) {
 
     return String(text)
 
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 

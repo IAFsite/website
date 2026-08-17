@@ -3,10 +3,14 @@
 ========================= */
 
 const params =
-    new URLSearchParams(window.location.search);
+    new URLSearchParams(
+        window.location.search
+    );
+
 
 const studentId =
     params.get("id") || "";
+
 
 const generationIdParam =
     params.get("generation") || "";
@@ -31,104 +35,26 @@ const researchTypes = {
 
 async function loadProfile() {
 
-    if (!studentId) {
-
-        showError(
-            "Kode murid tidak ditemukan."
-        );
-
-        return;
-
-    }
-
-
     try {
 
         /* =========================
-           FIND GENERATION
+           FETCH STUDENT
         ========================= */
 
-        const generationId =
-            generationIdParam ||
-            await findStudentGeneration(
-                studentId
+        const result =
+            await fetchStudent(
+                studentId,
+                generationIdParam
             );
 
 
-        if (!generationId) {
-
-            throw new Error(
-                `Murid dengan kode "${studentId}" tidak ditemukan.`
-            );
-
-        }
-
-
-        /* =========================
-           LOAD DATABASE
-        ========================= */
-
-const response =
-    await fetch(
-        `https://raw.githubusercontent.com/IAFsite/dbea/main/nexsac/data/${encodeURIComponent(generationId)}.json`
-    );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Data angkatan ${generationId} gagal dimuat (HTTP ${response.status}).`
-            );
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        /* =========================
-           STUDENTS
-        ========================= */
-
-        const students =
-            Array.isArray(data.students)
-                ? data.students
-                : [];
-
-
-        /* =========================
-           FIND STUDENT
-        ========================= */
-
-        const studentIndex =
-            students.findIndex(
-                student =>
-                    String(student.id) ===
-                    String(studentId)
-            );
-
-
-        if (studentIndex === -1) {
-
-            throw new Error(
-                `Murid dengan kode "${studentId}" tidak ditemukan.`
-            );
-
-        }
-
-
-        const student =
-            students[studentIndex];
-
-
-        /* =========================
-           GENERATION
-        ========================= */
-
-        const generationName =
-            data.generation?.name ||
-            `ANGKATAN ${generationId}`;
+        const {
+            student,
+            studentIndex,
+            generationId,
+            generationName,
+            photoUrl
+        } = result;
 
 
         /* =========================
@@ -150,21 +76,22 @@ const response =
 
 
         document.title =
-            `${student.name || "Profil Murid"} | Sekolah Alam Cikeas`;
+            `${student.name || "Profil Murid"} | Murid SMP Sekolah Alam Cikeas`;
 
 
         /* =========================
-           PROFILE
+           RENDER PROFILE
         ========================= */
 
         renderProfile(
             student,
-            studentIndex
+            studentIndex,
+            photoUrl
         );
 
 
         /* =========================
-           AWARDS
+           RENDER AWARDS
         ========================= */
 
         renderAwards(
@@ -173,11 +100,12 @@ const response =
 
 
         /* =========================
-           RESEARCH
+           RENDER RESEARCH
         ========================= */
 
         renderResearch(
-            student.research
+            student.research,
+            generationId
         );
 
     }
@@ -201,95 +129,13 @@ const response =
 
 
 /* =========================
-   FIND GENERATION
-========================= */
-
-async function findStudentGeneration(
-    id
-) {
-
-    /*
-     * Daftar database angkatan.
-     *
-     * Tambahkan ID database di sini
-     * jika nanti ada angkatan baru.
-     */
-
-    const generations = [
-
-        "00"
-
-    ];
-
-
-    for (
-        const generationId
-        of generations
-    ) {
-
-        try {
-
-            const response =
-                await fetch(
-                    `https://raw.githubusercontent.com/IAFsite/dbea/main/nexsac/data/${encodeURIComponent(generationId)}.json`
-                );
-
-
-            if (!response.ok)
-                continue;
-
-
-            const data =
-                await response.json();
-
-
-            const students =
-                Array.isArray(data.students)
-                    ? data.students
-                    : [];
-
-
-            const found =
-                students.some(
-                    student =>
-                        String(student.id) ===
-                        String(id)
-                );
-
-
-            if (found) {
-
-                return generationId;
-
-            }
-
-        }
-
-
-        catch (error) {
-
-            console.warn(
-                `Gagal memeriksa database ${generationId}:`,
-                error
-            );
-
-        }
-
-    }
-
-
-    return null;
-
-}
-
-
-/* =========================
    RENDER PROFILE
 ========================= */
 
 function renderProfile(
     student,
-    index
+    index,
+    photoUrl
 ) {
 
     const nameElement =
@@ -336,15 +182,15 @@ function renderProfile(
 
 
     /* =========================
-       DEFAULT PROFILE
+       PROFILE PHOTO
     ========================= */
 
     /*
-     * 1  → 1.png
-     * 2  → 2.png
-     * ...
-     * 12 → 12.png
-     * 13 → 1.png
+     * URL foto sudah dibuat oleh
+     * jsdata.js melalui fetchStudent().
+     *
+     * Jika tidak ada foto,
+     * gunakan default lokal.
      */
 
     const defaultProfile =
@@ -352,16 +198,15 @@ function renderProfile(
 
 
     const photo =
-        student.photo !== null &&
-        student.photo !== ""
-            ? student.photo
-            : `asset/default-profile/${defaultProfile}.png`;
+        photoUrl ||
+        `asset/default-profile/${defaultProfile}.png`;
 
 
     if (photoElement) {
 
         photoElement.src =
             photo;
+
 
         photoElement.alt =
             `Foto ${student.name || "murid"}`;
@@ -438,7 +283,7 @@ function renderAwards(
             const title =
                 typeof award === "string"
                     ? award
-                    : award.title || "-";
+                    : award?.title || "-";
 
 
             item.innerHTML = `
@@ -452,7 +297,9 @@ function renderAwards(
             `;
 
 
-            list.appendChild(item);
+            list.appendChild(
+                item
+            );
 
         }
     );
@@ -468,7 +315,8 @@ function renderAwards(
 ========================= */
 
 function renderResearch(
-    researchList
+    researchList,
+    generationId
 ) {
 
     const container =
@@ -556,9 +404,15 @@ function renderResearch(
                 "research-card";
 
 
+            /*
+             * Bawa generation ID ke paper page.
+             */
+
             card.href =
                 `paper.html?id=${encodeURIComponent(
                     paper.id
+                )}&generation=${encodeURIComponent(
+                    generationId
                 )}`;
 
 
@@ -567,7 +421,9 @@ function renderResearch(
                 <span class="research-type">
 
                     ${escapeHTML(
-                        researchTypes[paper.type] ||
+                        researchTypes[
+                            paper.type
+                        ] ||
                         "Penelitian"
                     )}
 
@@ -601,7 +457,9 @@ function renderResearch(
             `;
 
 
-            container.appendChild(card);
+            container.appendChild(
+                card
+            );
 
         }
     );
@@ -650,7 +508,9 @@ function showError(
    HTML ESCAPE
 ========================= */
 
-function escapeHTML(text) {
+function escapeHTML(
+    text
+) {
 
     return String(text)
 

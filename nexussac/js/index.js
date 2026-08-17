@@ -5,39 +5,19 @@
 async function loadGenerations() {
 
     const container =
-        document.getElementById("generation-list");
+        document.getElementById(
+            "generation-list"
+        );
+
+
+    if (!container)
+        return;
 
 
     try {
 
-        const response =
-            await fetch("angkatan.json");
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `generations.json gagal dimuat (${response.status})`
-            );
-
-        }
-
-
-        const database =
-            await response.json();
-
-
         const generations =
-            database.generations || [];
-
-
-        if (!generations.length) {
-
-            throw new Error(
-                "Tidak ada data angkatan."
-            );
-
-        }
+            await fetchGenerations();
 
 
         renderGenerations(
@@ -45,12 +25,14 @@ async function loadGenerations() {
             container
         );
 
-
     }
 
     catch (error) {
 
-        console.error(error);
+        console.error(
+            "Gagal memuat data angkatan:",
+            error
+        );
 
 
         container.innerHTML = `
@@ -62,7 +44,9 @@ async function loadGenerations() {
                 </h2>
 
                 <p>
-                    ${escapeHTML(error.message)}
+                    ${escapeHTML(
+                        error.message
+                    )}
                 </p>
 
             </div>
@@ -86,44 +70,69 @@ function renderGenerations(
     container.innerHTML = "";
 
 
-    generations.forEach(generation => {
+    generations.forEach(
+        generation => {
 
-        const card =
-            document.createElement("a");
-
-
-        card.className =
-            "generation-card";
-
-
-        card.href =
-            `angkatan.html?id=${encodeURIComponent(generation.id)}`;
+            const card =
+                document.createElement(
+                    "a"
+                );
 
 
-        card.innerHTML = `
-
-            <div class="generation-number">
-                ${escapeHTML(generation.id)}
-            </div>
-
-            <div class="generation-name">
-                ${escapeHTML(generation.name)}
-            </div>
-
-            <div class="generation-range">
-                ${escapeHTML(generation.range)}
-            </div>
-
-            <div class="generation-arrow">
-                →
-            </div>
-
-        `;
+            card.className =
+                "generation-card";
 
 
-        container.appendChild(card);
+            card.href =
+                `angkatan.html?id=${encodeURIComponent(
+                    generation.id
+                )}`;
 
-    });
+
+            card.innerHTML = `
+
+                <div class="generation-number">
+
+                    ${escapeHTML(
+                        generation.id
+                    )}
+
+                </div>
+
+
+                <div class="generation-name">
+
+                    ${escapeHTML(
+                        generation.name
+                    )}
+
+                </div>
+
+
+                <div class="generation-range">
+
+                    ${escapeHTML(
+                        generation.range
+                    )}
+
+                </div>
+
+
+                <div class="generation-arrow">
+
+                    →
+
+                </div>
+
+            `;
+
+
+            container.appendChild(
+                card
+            );
+
+        }
+    );
 
 }
 
@@ -132,19 +141,36 @@ function renderGenerations(
    ESCAPE HTML
 ========================= */
 
-function escapeHTML(text) {
+function escapeHTML(
+    text
+) {
 
     return String(text)
 
-        .replace(/&/g, "&amp;")
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
 
-        .replace(/</g, "&lt;")
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
 
-        .replace(/>/g, "&gt;")
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
 
-        .replace(/"/g, "&quot;")
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
 
-        .replace(/'/g, "&#039;");
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 

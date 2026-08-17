@@ -1,8 +1,16 @@
+/* =========================
+   GET PARAMETERS
+========================= */
+
 const params =
-    new URLSearchParams(window.location.search);
+    new URLSearchParams(
+        window.location.search
+    );
+
 
 const generationId =
     params.get("id") || "";
+
 
 const researchType =
     params.get("type") || "";
@@ -28,10 +36,15 @@ const researchTypes = {
 async function loadResearch() {
 
     const pageTitle =
-        document.getElementById("page-title");
+        document.getElementById(
+            "page-title"
+        );
+
 
     const researchList =
-        document.getElementById("research-list");
+        document.getElementById(
+            "research-list"
+        );
 
 
     /* =========================
@@ -63,7 +76,9 @@ async function loadResearch() {
 
 
     const typeName =
-        researchTypes[researchType];
+        researchTypes[
+            researchType
+        ];
 
 
     if (!typeName) {
@@ -82,8 +97,12 @@ async function loadResearch() {
        HEADER
     ========================= */
 
-    pageTitle.textContent =
-        `${typeName} — ANGKATAN ${generationId}`;
+    if (pageTitle) {
+
+        pageTitle.textContent =
+            `${typeName} — ANGKATAN ${generationId}`;
+
+    }
 
 
     document.title =
@@ -93,61 +112,14 @@ async function loadResearch() {
     try {
 
         /* =========================
-           LOAD JSON
+           LOAD RESEARCH
         ========================= */
 
-        const response =
-            await fetch(
-                `https://raw.githubusercontent.com/IAFsite/dbea/main/nexsac/data/${encodeURIComponent(generationId)}.json`
+        const researchListData =
+            await fetchResearchByGeneration(
+                generationId,
+                researchType
             );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Data angkatan tidak dapat dimuat (HTTP ${response.status}).`
-            );
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        /* =========================
-           FIND RESEARCH
-        ========================= */
-
-        const researchListData = [];
-
-
-        for (
-            const student
-            of data.students || []
-        ) {
-
-            for (
-                const research
-                of student.research || []
-            ) {
-
-                if (
-                    research.type === researchType
-                ) {
-
-                    researchListData.push({
-
-                        research,
-                        student
-
-                    });
-
-                }
-
-            }
-
-        }
 
 
         /* =========================
@@ -183,7 +155,9 @@ async function loadResearch() {
             ({ research, student }) => {
 
                 const card =
-                    document.createElement("a");
+                    document.createElement(
+                        "a"
+                    );
 
 
                 card.className =
@@ -191,16 +165,22 @@ async function loadResearch() {
 
 
                 card.href =
-                    `paper.html?id=${encodeURIComponent(research.id)}`;
+                    `paper.html?id=${encodeURIComponent(
+                        research.id
+                    )}`;
 
-                card.addEventListener("click", () => {
 
-                    sessionStorage.setItem(
-                        "paperGeneration",
-                    generationId
+                card.addEventListener(
+                    "click",
+                    () => {
+
+                        sessionStorage.setItem(
+                            "paperGeneration",
+                            generationId
+                        );
+
+                    }
                 );
-
-                });
 
 
                 card.innerHTML = `
@@ -230,11 +210,19 @@ async function loadResearch() {
                         <div class="research-meta">
 
                             <span>
+
                                 ${escapeHTML(
-                                research.id
-                                )} | ${escapeHTML(
-                                research.year || "-"
+                                    research.id ||
+                                    "-"
                                 )}
+
+                                |
+
+                                ${escapeHTML(
+                                    research.year ||
+                                    "-"
+                                )}
+
                             </span>
 
                         </div>
@@ -244,7 +232,9 @@ async function loadResearch() {
                 `;
 
 
-                researchList.appendChild(card);
+                researchList.appendChild(
+                    card
+                );
 
             }
         );
@@ -310,15 +300,30 @@ function escapeHTML(text) {
 
     return String(text)
 
-        .replaceAll("&", "&amp;")
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
 
-        .replaceAll("<", "&lt;")
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
 
-        .replaceAll(">", "&gt;")
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
 
-        .replaceAll('"', "&quot;")
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
 
-        .replaceAll("'", "&#039;");
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 
